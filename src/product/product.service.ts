@@ -38,9 +38,13 @@ export class ProductService {
 					},
 				},
 				{
-					$sort: { _id: 1 },
+					$sort: {
+						_id: 1,
+					},
 				},
-				{ $limit: dto.limit },
+				{
+					$limit: dto.limit,
+				},
 				{
 					$lookup: {
 						from: 'Review',
@@ -53,13 +57,19 @@ export class ProductService {
 					$addFields: {
 						reviewCount: { $size: '$reviews' },
 						reviewAvg: { $avg: '$reviews.rating' },
+						reviews: {
+							$function: {
+								body: `function (reviews) {
+								reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+								return reviews;
+							}`,
+								args: ['$reviews'],
+								lang: 'js',
+							},
+						},
 					},
 				},
 			])
-			.exec() as unknown as (ProductModel & {
-			review: ReviewModel[];
-			reviewCount: number;
-			reviewAvg: number;
-		})[];
+			.exec();
 	}
 }
